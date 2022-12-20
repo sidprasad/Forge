@@ -775,7 +775,9 @@
       (begin where-blocks ...) ;; Need to guard against no blocks
       (test 
         test_name
-        #:preds [(implies pred_name.name prop_name.name)]
+        #:preds [(if (= constraint_type "overconstraint")
+                     (implies pred_name.name prop_name.name)
+                     (implies prop_name.name pred_name.name ))]
         
         (~? (~@ #:scope scope.translate))
         (~? (~@ #:bounds bounds.translate))
