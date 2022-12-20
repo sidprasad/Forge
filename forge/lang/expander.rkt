@@ -765,23 +765,37 @@
                               (~optional bounds:BoundsClass)
                                "where"
                               where-blocks:TestConstructClass ...  ) 
-  #:with test_name (make-temporary-name stx)
+  ;;; #:with test_name (make-temporary-name stx)
+  ;;; #:with over (if (= "overconstraint" "overconstraint")
+  ;;;                    pred_name prop_name)
+  (with-syntax ([test_name (make-temporary-name stx)]
+                [constraint_type (datum->syntax #'constraint_type
+                                          (string->symbol (syntax->datum #'constraint_type)))]
+                [imp_rhs (if (= #'constraint_type "overconstraint") #'pred_name #'prop_name)]
+                [imp_lhs (if (= #'constraint_type "overconstraint") #'prop_name #'pred_name)]
+  
+  
+  
+  
+  
+  )
   ;;(printf "~a  ~n" (syntax->datum stx)) ;; Remove at some point
-
+    
    (syntax/loc stx 
     (begin
-     
+      ;(printf "~a  ~n" constraint_type)
       (pred prop_name.name prop_expr) 
       (begin where-blocks ...) ;; Need to guard against no blocks
       (test 
         test_name
-        #:preds [(if (= constraint_type "overconstraint")
-                     (implies pred_name.name prop_name.name)
-                     (implies prop_name.name pred_name.name ))]
+        #:preds [(implies imp_lhs.name imp_rhs.name)]
         
         (~? (~@ #:scope scope.translate))
         (~? (~@ #:bounds bounds.translate))
-        #:expect theorem   )))]))
+        #:expect theorem   )))
+        
+  )
+        ]))
 
 
 
