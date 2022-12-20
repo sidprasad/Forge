@@ -302,14 +302,12 @@
   ;; PropertyWhereDecl : PROPERTY-TOK Name OF-TOK Name Block? WHERE-TOK? Block?
   (define-syntax-class PropertyWhereDeclClass
     (pattern ((~literal PropertyWhereDecl) 
-                              "property" 
+                              (~or "overconstraint" "underconstraint")
                               prop_name:NameClass
-                              "of"
                               pred_name:NameClass
                               prop_expr:BlockClass
                               (~optional scope:ScopeClass)
                               (~optional bounds:BoundsClass)
-                              "where"
                               where-blocks:TestConstructClass ...)))
 
 
@@ -756,17 +754,20 @@
 (define-syntax (PropertyWhereDecl stx)
   (syntax-parse stx
   [((~literal PropertyWhereDecl) 
-                              "property" 
+                              (~and constr_type (~or "overconstraint" "underconstraint"))
                               prop_name:NameClass
-                              "of"
                               pred_name:NameClass
                               prop_expr:BlockClass 
                               (~optional scope:ScopeClass)
                               (~optional bounds:BoundsClass)
-                               "where"
                               where-blocks:TestConstructClass ...  ) 
-  #:with test_name (make-temporary-name stx)
+  ;;#:with test_name (make-temporary-name stx)
+  ;;#:with pred_body (if )
   ;;(printf "~a  ~n" (syntax->datum stx)) ;; Remove at some point
+   (with-syntax ([test_name (make-temporary-name stx)]
+                 [pred_body if (= constr_type "overconstraint") ((implies pred_name.name prop_name.name))  ((implies prop_name.name pred_name.name ))])
+
+
 
    (syntax/loc stx 
     (begin
@@ -776,7 +777,7 @@
       (test 
         test_name
         #:preds [(implies pred_name.name prop_name.name)]
-        
+        pred_body
         (~? (~@ #:scope scope.translate))
         (~? (~@ #:bounds bounds.translate))
         #:expect theorem   )))]))
