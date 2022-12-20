@@ -302,7 +302,7 @@
   ;; PropertyWhereDecl : PROPERTY-TOK Name OF-TOK Name Block? WHERE-TOK? Block?
   (define-syntax-class PropertyWhereDeclClass
     (pattern ((~literal PropertyWhereDecl) 
-                              "property" 
+                              (~or "overconstraint" "underconstraint")
                               prop_name:NameClass
                               "of"
                               pred_name:NameClass
@@ -756,7 +756,7 @@
 (define-syntax (PropertyWhereDecl stx)
   (syntax-parse stx
   [((~literal PropertyWhereDecl) 
-                              "overconstraint" 
+                              (~and constraint_type (~or "overconstraint" "underconstraint"))  
                               prop_name:NameClass
                               "of"
                               pred_name:NameClass

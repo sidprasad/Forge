@@ -116,6 +116,7 @@
 
    ;; Property of where
    ["overconstraint"     (token+ `OVERCONSTRAINT-TOK "" lexeme "" lexeme-start lexeme-end)]  
+   ["underconstraint"     (token+ `UNDERCONSTRAINT-TOK "" lexeme "" lexeme-start lexeme-end)]  
    ["of"     (token+ `OF-TOK "" lexeme "" lexeme-start lexeme-end)]  
    ["where"     (token+ `WHERE-TOK "" lexeme "" lexeme-start lexeme-end)]  
 
@@ -235,6 +236,7 @@
 
 
            "overconstraint"
+           "underconstraint"
            "of"
            "where"
            

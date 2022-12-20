@@ -14,7 +14,7 @@ pred isUndirectedTree {
 }
 
 
- property isUndirected of isUndirectedTree
+ overconstraint isUndirected of isUndirectedTree
  {
      all m, n : Node | n->m in edges implies m->n in edges
  } 
@@ -48,7 +48,7 @@ pred isUndirectedTree {
         }
 
 
-        property reachability of isUndirected
+        overconstraint reachability of isUndirected
         {
             all m, n : Node | n->m in edges implies m in n.*edges
         }
@@ -60,7 +60,7 @@ pred isUndirectedTree {
 
 
 
-property emptyofone of isUndirectedTree
+overconstraint emptyofone of isUndirectedTree
  {
     (no edges)
  } 
