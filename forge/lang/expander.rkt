@@ -756,7 +756,7 @@
 (define-syntax (PropertyWhereDecl stx)
   (syntax-parse stx
   [((~literal PropertyWhereDecl) 
-                              "property" 
+                              "overconstraint" 
                               prop_name:NameClass
                               "of"
                               pred_name:NameClass
