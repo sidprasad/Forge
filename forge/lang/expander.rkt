@@ -775,7 +775,11 @@
                         (syntax/loc stx (implies pwd.pred-name pwd.prop-name))) ;;; Underconstraint Pred => Prop
    #:do [(match-define (list op lhs rhs) (syntax->list #'imp_total))]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
-   #:with _ (register-uc #'imp_total)
+
+   ;; Ugly, but will merge with imp_total later.
+   #:with _ (if (eq? (syntax-e #'pwd.constraint-type) 'overconstraint)
+                        (register-oc #'imp_total)  ;;; Overconstraint : Prop => Pred
+                        (register-uc #'imp_total))
    (syntax/loc stx
     (begin
       
