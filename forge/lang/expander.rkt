@@ -700,6 +700,20 @@
         (format-id stx "temporary-name~a" (unbox name-counter) #:source stx)
         (set-box! name-counter (+ 1 (unbox name-counter)))))))
 
+(define-for-syntax register-uc
+  (let ((ucs (box '())))
+    (lambda (uc) 
+      (begin
+        (set-box! ucs (cons uc (unbox ucs)))
+        (unbox ucs)))))
+
+(define-for-syntax register-oc
+  (let ((ocs (box '())))
+    (lambda (oc) 
+      (begin
+        (set-box! ocs (cons oc (unbox ocs)))
+        (unbox ocs)))))
+
 ; CmdDecl :  (Name /COLON-TOK)? (RUN-TOK | CHECK-TOK) Parameters? (QualName | Block)? Scope? (/FOR-TOK Bounds)?
 (define-syntax (CmdDecl stx)
   (syntax-parse stx
@@ -761,8 +775,10 @@
                         (syntax/loc stx (implies pwd.pred-name pwd.prop-name))) ;;; Underconstraint Pred => Prop
    #:do [(match-define (list op lhs rhs) (syntax->list #'imp_total))]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
+   #:with _ (register-uc #'imp_total)
    (syntax/loc stx
     (begin
+      
       (pred pwd.prop-name pwd.prop-expr)
       (begin pwd.where-blocks ...)
       (test
