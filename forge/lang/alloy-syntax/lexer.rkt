@@ -119,6 +119,8 @@
    ["underconstraint"     (token+ `UNDERCONSTRAINT-TOK "" lexeme "" lexeme-start lexeme-end)]  
    ["of"     (token+ `OF-TOK "" lexeme "" lexeme-start lexeme-end)]  
    ["where"     (token+ `WHERE-TOK "" lexeme "" lexeme-start lexeme-end)]  
+   ["_overconstraints_"     (token+ `OVERCONSTRAINTS-TOK "" lexeme "" lexeme-start lexeme-end)]  
+   ["_underconstraints_"     (token+ `UNDERCONSTRAINTS-TOK "" lexeme "" lexeme-start lexeme-end)]  
 
    ;["state"     (token+ `STATE-TOK "" lexeme "" lexeme-start lexeme-end)]
    ;["facts"     (token+ `STATE-TOK "" lexeme "" lexeme-start lexeme-end)]  
@@ -239,6 +241,8 @@
            "underconstraint"
            "of"
            "where"
+           "_overconstraints_"
+           "_underconstraints_"
            
            ;"state"
            ;"facts"

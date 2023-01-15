@@ -43,6 +43,7 @@ Import : /OPEN-TOK QualName (LEFT-SQUARE-TOK QualNameList RIGHT-SQUARE-TOK)? (AS
           | InstDecl
           | ExampleDecl 
           | PropertyWhereDecl
+          
 
 ; NOTE: When extending sigs with "in" (subset sigs) is implemented,
 ;  if "sig A in B extends C" is allowed, update this to allow multiple SigExt
@@ -76,11 +77,17 @@ Scope : /FOR-TOK Number (/BUT-TOK @TypescopeList)?
 Typescope : EXACTLY-TOK? Number QualName
 Const : NONE-TOK | UNIV-TOK | IDEN-TOK
       | MINUS-TOK? Number 
+      
 
 
 PropertyWhereDecl : (OVERCONSTRAINT-TOK | UNDERCONSTRAINT-TOK) Name OF-TOK Name Block Scope? (/FOR-TOK Bounds)? (/WHERE-TOK /LEFT-CURLY-TOK TestConstruct* /RIGHT-CURLY-TOK)?
 
 @TestConstruct : ExampleDecl | TestExpectDecl
+
+
+;; Sid: Need better names, need to add this to the parse treee under something.
+HiddenPredicateDecl: OVERCONSTRAINTS-TOK | UNDERCONSTRAINTS-TOK
+
 
 
 # UnOp : Mult
