@@ -755,52 +755,47 @@
   (let ((ucs (make-hash)))
     (lambda (uc target) 
       (begin
-
         (if (dict-has-key? ucs target)
             (let*
               ([existing-ucs (dict-ref ucs target)]
-               [new-uc (and uc existing-ucs )] ;; ((syntax/loc?)
-              )
-
-              (dict-update! ucs target new-uc)
-
-            ) ;; Add to the list as a conjunction
+               [new-uc (and uc existing-ucs )]) ;; ((syntax/loc?)
+              (dict-update! ucs target new-uc))
             (dict-set! ucs target uc))
-        (dict-ref ucs target))))) ;; Finally, get back the UC
+        (dict-ref ucs target)))))
+
+(define-for-syntax register-oc
+  (let ((ocs (make-hash)))
+    (lambda (oc target) 
+      (begin
+        (if (dict-has-key? ocs target)
+            (let*
+              ([existing-ocs (dict-ref ocs target)]
+               [new-oc (or oc existing-ocs )]) ;; ((syntax/loc?)
+              (dict-update! ocs target new-oc))
+            (dict-set! ocs target oc))
+        (dict-ref ocs target)))))
+
 
 (define-syntax (PropertyWhereDecl stx)
   (syntax-parse stx
   [pwd:PropertyWhereDeclClass 
 
   #:with imp_total (match (syntax-e #'pwd.constraint-type)
-                    ['sufficient (begin0
-                                    ;; p => q : p is a sufficient condition for q 
-                                    (syntax/loc stx (implies pwd.prop-name pwd.pred-name)  
-                                    (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name))))]
-                    ['necessary  (begin0
-                                    ;; q => p : p is a necessary condition for q
-                                    (syntax/loc stx (implies pwd.pred-name pwd.prop-name))
-                                    (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
-                    [default (raise (format "Unrecognized constraint ~a" #'ct))])
+          ['sufficient (begin0
+                          ;; p => q : p is a sufficient condition for q 
+                          (syntax/loc stx (implies pwd.prop-name pwd.pred-name)) 
+                          (register-oc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))]
+          ['necessary  (begin0
+                          ;; q => p : p is a necessary condition for q
+                          (syntax/loc stx (implies pwd.pred-name pwd.prop-name))
+                          (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
+          [default (raise (format "Unrecognized constraint ~a" #'ct))])
 
-   #:do [ 
-          ; (if #'sufficient (register-uc (syntax/loc stx pwd.pred-name) (syntax/loc stx pwd.prop-name))  ;; Change to register oc
-          ;                     (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))
-
-          (match (syntax->datum #'ct)
-            ['sufficient (register-uc (syntax/loc stx pwd.pred-name) (syntax/loc stx pwd.prop-name)) ] ;; Change to register oc
-            ['necessary (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name))]
-            [default (raise (format "Unrecognized constraint ~a" #'ct))])
-
-
-
-
-          (match-define (list op lhs rhs) (syntax->list #'imp_total))]
+   #:do [(match-define (list op lhs rhs) (syntax->list #'imp_total))]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
 
    (syntax/loc stx
     (begin
-      
       (pred pwd.prop-name pwd.prop-expr)
       (begin pwd.where-blocks ...)
       (test
