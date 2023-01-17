@@ -43,6 +43,7 @@ Import : /OPEN-TOK QualName (LEFT-SQUARE-TOK QualNameList RIGHT-SQUARE-TOK)? (AS
           | InstDecl
           | ExampleDecl 
           | PropertyWhereDecl
+          | CoverageDecl
 
 ; NOTE: When extending sigs with "in" (subset sigs) is implemented,
 ;  if "sig A in B extends C" is allowed, update this to allow multiple SigExt
@@ -81,6 +82,9 @@ Const : NONE-TOK | UNIV-TOK | IDEN-TOK
 PropertyWhereDecl : /ASSERT-TOK Name Block /IS-TOK (SUFFICIENT-TOK | NECESSARY-TOK) /FOR-TOK Name Scope? (/FOR-TOK Bounds)? (/WHERE-TOK /LEFT-CURLY-TOK TestConstruct* /RIGHT-CURLY-TOK)?
 
 @TestConstruct : ExampleDecl | TestExpectDecl
+
+
+CoverageDecl : /CHECK-TOK Name (SUFFICIENT-TOK | NECESSARY-TOK) Scope? (/FOR-TOK Bounds)?
 
 
 # UnOp : Mult

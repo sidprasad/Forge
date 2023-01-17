@@ -103,6 +103,7 @@
     (pattern decl:CmdDeclClass)
     (pattern decl:TestExpectDeclClass)
     (pattern decl:PropertyWhereDeclClass)
+    (pattern decl:CoverageDeclClass)
     (pattern decl:SexprDeclClass)
     ; (pattern decl:BreakDeclClass)
     ; (pattern decl:InstanceDeclClass)
@@ -310,6 +311,18 @@
               where-blocks:TestConstructClass ...)
       #:with prop-name #'-prop-name.name
       #:with pred-name #'-pred-name.name
+      #:with constraint-type (string->symbol (syntax-e #'ct))
+      #:with scope (if (attribute -scope) #'-scope.translate #'())
+      #:with bounds (if (attribute -bounds) #'-bounds.translate #'())))
+
+    (define-syntax-class CoverageDeclClass
+    #:attributes (name constraint-type scope bounds)
+    (pattern ((~literal CoverageDecl)          
+              -name:NameClass
+              (~and (~or "sufficient" "necessary") ct)
+              (~optional -scope:ScopeClass)
+              (~optional -bounds:BoundsClass))
+      #:with name #'-name.name
       #:with constraint-type (string->symbol (syntax-e #'ct))
       #:with scope (if (attribute -scope) #'-scope.translate #'())
       #:with bounds (if (attribute -bounds) #'-bounds.translate #'())))
@@ -751,19 +764,21 @@
        (syntax/loc stx (begin)))]))
 
 ;;;;;; Coverage helpers  ;;;;;;;;;;;;;;;
-(define-for-syntax register-uc
+(define-for-syntax build-uc-for-pred
   (let ((ucs (make-hash)))
-    (lambda (uc target) 
-      (begin
-        (if (dict-has-key? ucs target)
-            (let*
-              ([existing-ucs (dict-ref ucs target)]
-               [new-uc (and uc existing-ucs )]) ;; ((syntax/loc?)
-              (dict-update! ucs target new-uc))
-            (dict-set! ucs target uc))
-        ucs))))
+  (lambda (action)
+    (match action
+    ['get (lambda (target) (dict-ref ucs target))]
+    ['add     (lambda (uc target) 
+      (if (dict-has-key? ucs target)
+        (let* ([existing-ucs (dict-ref ucs target)]
+               [new-uc (and uc existing-ucs )]) 
+                (dict-update! ucs target new-uc))
+        (dict-set! ucs target uc))]))))
 
-(define-for-syntax register-oc
+
+
+(define-for-syntax build-oc-for-pred
   (let ((ocs (make-hash)))
     (lambda (oc target) 
       (begin
@@ -773,7 +788,7 @@
                [new-oc (or oc existing-ocs )]) ;; ((syntax/loc?)
               (dict-update! ocs target new-oc))
             (dict-set! ocs target oc))
-        ocs))))
+        (dict-ref ocs target)))))
 
 
 ;; Very lightweight and unintelligent for now.
@@ -806,18 +821,15 @@
           ['sufficient (begin0
                           ;; p => q : p is a sufficient condition for q 
                           (syntax/loc stx (implies pwd.prop-name pwd.pred-name)) 
-                          (register-oc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))]
+                          (build-oc-for-pred (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))]
           ['necessary  (begin0
                           ;; q => p : p is a necessary condition for q
                           (syntax/loc stx (implies pwd.pred-name pwd.prop-name))
-                          (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
+                          (build-uc-for-pred (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
           [default (raise (format "Unrecognized constraint ~a" #'ct))])
 
-   #:do [
-          (match-define (list op lhs rhs) (syntax->list #'ct-as-imp))
-          
-          (map (check-test-references-target #'pwd.prop-name) (syntax->list #'(pwd.where-blocks ...)))  
-        ]
+   #:do [(match-define (list op lhs rhs) (syntax->list #'ct-as-imp))        
+         (map (check-test-references-target #'pwd.prop-name) (syntax->list #'(pwd.where-blocks ...))) ]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
 
    (syntax/loc stx
@@ -830,6 +842,33 @@
         #:scope pwd.scope
         #:bounds pwd.bounds
         #:expect theorem )))]))
+
+
+(define-syntax (CoverageDecl stx)
+  (syntax-parse stx
+  [cd:CoverageDeclClass 
+   #:with tn (make-temporary-name stx)
+   #:with exp (match (syntax-e #'cd.constraint-type)
+               ['sufficient (build-oc-for-pred (syntax/loc stx cd.name) (syntax/loc stx cd.name))] 
+               ['necessary  (build-uc-for-pred (syntax/loc stx cd.name) (syntax/loc stx cd.name))] 
+           [default (raise (format "Unrecognized constraint ~a" (syntax-e #'cd.constraint-type)))])
+   #:with coverage-exp (syntax/loc stx (implies tn cd.name)) ;; Fix this later
+
+   #:with test_name (format-id stx "~a ~a coverage"  (syntax-e #'cd.name) (syntax-e #'cd.constraint-type))
+
+   (syntax/loc stx
+      (begin 
+      
+      (pred tn exp)
+      (print (format "~a" exp))
+      (test
+        test_name
+        #:preds [coverage-exp]
+        #:scope cd.scope
+        #:bounds cd.bounds
+        #:expect theorem )
+        
+        ))]))
 
 (define-syntax (ExampleDecl stx)
   (syntax-parse stx

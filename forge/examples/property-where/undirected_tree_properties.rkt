@@ -56,3 +56,5 @@ assert emptyofone
  } is sufficient for isUndirectedTree
  for 1 Node
 
+
+check isUndirectedTree necessary
