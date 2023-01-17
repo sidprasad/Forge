@@ -780,7 +780,7 @@
   (syntax-parse stx
   [pwd:PropertyWhereDeclClass 
 
-  #:with imp_total (match (syntax-e #'pwd.constraint-type)
+  #:with ct-as-imp (match (syntax-e #'pwd.constraint-type)
           ['sufficient (begin0
                           ;; p => q : p is a sufficient condition for q 
                           (syntax/loc stx (implies pwd.prop-name pwd.pred-name)) 
@@ -791,7 +791,7 @@
                           (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
           [default (raise (format "Unrecognized constraint ~a" #'ct))])
 
-   #:do [(match-define (list op lhs rhs) (syntax->list #'imp_total))]
+   #:do [(match-define (list op lhs rhs) (syntax->list #'ct-as-imp))]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
 
    (syntax/loc stx
@@ -800,7 +800,7 @@
       (begin pwd.where-blocks ...)
       (test
         test_name
-        #:preds [imp_total]
+        #:preds [ct-as-imp]
         #:scope pwd.scope
         #:bounds pwd.bounds
         #:expect theorem )))]))
