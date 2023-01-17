@@ -776,10 +776,11 @@
         ocs))))
 
 
-;; Checks that an example actually
-;; references the goal predicate
-
-;; Very lightweight for now.
+;; Very lightweight and unintelligent for now.
+;; Compiles test AST to a string and ensures that the
+;; referenced predicate is present.
+;; Could be done better by traversing the AST looking
+;; for the qualName.
 (define-for-syntax check-test-references-target
   (lambda (target-pred)
     (let 
@@ -789,11 +790,11 @@
             ([ex-as-datum (syntax->datum ex)]
               [ast-str  (format "~a" ex-as-datum)])
             (if (string-contains? ast-str tp)
-                (void)
-                (println 
-                  (format "Warning: ~a ~a:~a Test in where block does not reference ~a." 
-                    (syntax-source ex) (syntax-line ex) (syntax-column ex)  tp) 
-                  (current-error-port))))))))
+              (void)
+              (println 
+                (format "Warning: ~a ~a:~a Test in where block does not reference ~a." 
+                  (syntax-source ex) (syntax-line ex) (syntax-column ex)  tp) 
+                (current-error-port))))))))
 
 
 
