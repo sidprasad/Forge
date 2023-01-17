@@ -5,13 +5,15 @@
 
 (require syntax/parse/define
          (for-syntax racket/base syntax/parse racket/syntax syntax/parse/define racket/function
-                     syntax/srcloc racket/match)
+                     syntax/srcloc racket/match racket/dict)
          ; Needed because the abstract-tok definition below requires phase 2
          (for-syntax (for-syntax racket/base)))
                  
 (require (only-in racket empty? first))
 (require forge/sigs)
 (require forge/choose-lang-specific)
+
+
 
 (provide isSeqOf seqFirst seqLast indsOf idxOf lastIdxOf elems inds isEmpty hasDups reachable)
 (provide #%module-begin)
@@ -748,18 +750,57 @@
        (syntax/loc stx (begin block.test-decls ...))
        (syntax/loc stx (begin)))]))
 
+;; Sidd
+(define-for-syntax register-uc
+  (let ((ucs (make-hash)))
+    (lambda (uc target) 
+      (begin
+
+        (if (dict-has-key? ucs target)
+            (let*
+              ([existing-ucs (dict-ref ucs target)]
+               [new-uc (and uc existing-ucs )] ;; ((syntax/loc?)
+              )
+
+              (dict-update! ucs target new-uc)
+
+            ) ;; Add to the list as a conjunction
+            (dict-set! ucs target uc))
+        (dict-ref ucs target))))) ;; Finally, get back the UC
 
 (define-syntax (PropertyWhereDecl stx)
   (syntax-parse stx
   [pwd:PropertyWhereDeclClass 
-   #:with imp_total (if (eq? (syntax-e #'pwd.constraint-type) 'sufficient)
-                        (syntax/loc stx (implies pwd.prop-name pwd.pred-name))  ;;; p => q : p is a sufficient condition for q 
-                        (syntax/loc stx (implies pwd.pred-name pwd.prop-name))) ;;; q => p : p is a necessary condition for q
 
-   #:do [(match-define (list op lhs rhs) (syntax->list #'imp_total))]
+  #:with imp_total (match (syntax-e #'pwd.constraint-type)
+                    ['sufficient (begin0
+                                    ;; p => q : p is a sufficient condition for q 
+                                    (syntax/loc stx (implies pwd.prop-name pwd.pred-name)  
+                                    (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name))))]
+                    ['necessary  (begin0
+                                    ;; q => p : p is a necessary condition for q
+                                    (syntax/loc stx (implies pwd.pred-name pwd.prop-name))
+                                    (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
+                    [default (raise (format "Unrecognized constraint ~a" #'ct))])
+
+   #:do [ 
+          ; (if #'sufficient (register-uc (syntax/loc stx pwd.pred-name) (syntax/loc stx pwd.prop-name))  ;; Change to register oc
+          ;                     (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))
+
+          (match (syntax->datum #'ct)
+            ['sufficient (register-uc (syntax/loc stx pwd.pred-name) (syntax/loc stx pwd.prop-name)) ] ;; Change to register oc
+            ['necessary (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name))]
+            [default (raise (format "Unrecognized constraint ~a" #'ct))])
+
+
+
+
+          (match-define (list op lhs rhs) (syntax->list #'imp_total))]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
+
    (syntax/loc stx
     (begin
+      
       (pred pwd.prop-name pwd.prop-expr)
       (begin pwd.where-blocks ...)
       (test

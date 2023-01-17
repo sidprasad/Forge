@@ -56,6 +56,7 @@ pred isUndirectedTree {
 assert emptyofone
  {
     (no edges)
+
  } is sufficient for isUndirectedTree
  for 1 Node
 
