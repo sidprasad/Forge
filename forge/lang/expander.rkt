@@ -5,7 +5,7 @@
 
 (require syntax/parse/define
          (for-syntax racket/base syntax/parse racket/syntax syntax/parse/define racket/function
-                     syntax/srcloc racket/match racket/dict)
+                     syntax/srcloc racket/match racket/dict racket/string)
          ; Needed because the abstract-tok definition below requires phase 2
          (for-syntax (for-syntax racket/base)))
                  
@@ -750,7 +750,7 @@
        (syntax/loc stx (begin block.test-decls ...))
        (syntax/loc stx (begin)))]))
 
-;; Sidd
+;;;;;; Coverage helpers  ;;;;;;;;;;;;;;;
 (define-for-syntax register-uc
   (let ((ucs (make-hash)))
     (lambda (uc target) 
@@ -761,7 +761,7 @@
                [new-uc (and uc existing-ucs )]) ;; ((syntax/loc?)
               (dict-update! ucs target new-uc))
             (dict-set! ucs target uc))
-        (dict-ref ucs target)))))
+        ucs))))
 
 (define-for-syntax register-oc
   (let ((ocs (make-hash)))
@@ -773,7 +773,28 @@
                [new-oc (or oc existing-ocs )]) ;; ((syntax/loc?)
               (dict-update! ocs target new-oc))
             (dict-set! ocs target oc))
-        (dict-ref ocs target)))))
+        ocs))))
+
+
+;; Checks that an example actually
+;; references the goal predicate
+
+;; Very lightweight for now.
+(define-for-syntax check-test-references-target
+  (lambda (target-pred)
+    (let 
+      ([tp (format "~a" (syntax->datum target-pred))])
+        (lambda (ex) 
+          (let*
+            ([ex-as-datum (syntax->datum ex)]
+              [ast-str  (format "~a" ex-as-datum)])
+            (if (string-contains? ast-str tp)
+                (void)
+                (println 
+                  (format "Warning: ~a ~a:~a Test in where block does not reference ~a." 
+                    (syntax-source ex) (syntax-line ex) (syntax-column ex)  tp) 
+                  (current-error-port))))))))
+
 
 
 (define-syntax (PropertyWhereDecl stx)
@@ -791,7 +812,11 @@
                           (register-uc (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
           [default (raise (format "Unrecognized constraint ~a" #'ct))])
 
-   #:do [(match-define (list op lhs rhs) (syntax->list #'ct-as-imp))]
+   #:do [
+          (match-define (list op lhs rhs) (syntax->list #'ct-as-imp))
+          
+          (map (check-test-references-target #'pwd.prop-name) (syntax->list #'(pwd.where-blocks ...)))  
+        ]
    #:with test_name (format-id stx "~a ~a ~a" lhs op rhs)
 
    (syntax/loc stx

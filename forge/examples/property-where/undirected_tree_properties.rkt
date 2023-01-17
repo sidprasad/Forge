@@ -14,7 +14,6 @@ pred isUndirectedTree {
 }
 
 
-
  assert isUndirected 
  {
      all m, n : Node | n->m in edges implies m->n in edges
@@ -22,17 +21,14 @@ pred isUndirectedTree {
  is necessary for isUndirectedTree
  where {
 
-
         test expect {
 
             {isUndirected} is sat
         }
-
         example line is {not isUndirected} for {
             Node = `Node0 + `Node1 + `Node2
             edges = `Node0->`Node1 + `Node1->`Node2 
         }
-
         example empty is {isUndirected} for {
             Node = none
             edges = none->none
