@@ -47,6 +47,19 @@ pred isUndirectedTree {
 
 
 
+ assert b 
+ {
+     Node->Node in *edges
+    no iden & edges
+    all n : Node | {
+        all m : Node | {
+            (n->m + m->n) in edges implies (n->m + m->n) not in ^(edges - (n->m + m->n))
+        }
+    }
+ }
+ is necessary for isUndirectedTree
+ 
+
 
 
 assert emptyofone

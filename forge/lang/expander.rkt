@@ -764,7 +764,7 @@
        (syntax/loc stx (begin)))]))
 
 ;;;;;; Coverage helpers  ;;;;;;;;;;;;;;;
-(define-for-syntax build-uc-for-pred
+(define-for-syntax underconstraints
   (let ((ucs (make-hash)))
   (lambda (action)
     (match action
@@ -772,24 +772,22 @@
     ['add     (lambda (uc target) 
       (if (dict-has-key? ucs target)
         (let* ([existing-ucs (dict-ref ucs target)]
-               [new-uc (and uc existing-ucs )]) 
-                (dict-update! ucs target new-uc))
-        (dict-set! ucs target uc))]))))
+               [new-uc (and uc existing-ucs )]) ;; Sidd: ISSUE HERE, this is racket and, I want forge and.
+                (dict-set! ucs target new-uc))
+        (dict-set! ucs target uc)))]))))
 
 
-
-(define-for-syntax build-oc-for-pred
+(define-for-syntax overconstraints
   (let ((ocs (make-hash)))
-    (lambda (oc target) 
-      (begin
-        (if (dict-has-key? ocs target)
-            (let*
-              ([existing-ocs (dict-ref ocs target)]
-               [new-oc (or oc existing-ocs )]) ;; ((syntax/loc?)
-              (dict-update! ocs target new-oc))
-            (dict-set! ocs target oc))
-        (dict-ref ocs target)))))
-
+  (lambda (action)
+    (match action
+    ['get (lambda (target) (dict-ref ocs target))]
+    ['add     (lambda (oc target) 
+      (if (dict-has-key? ocs target)
+        (let* ([existing-ocs (dict-ref ocs target)]
+               [new-oc (or oc existing-ocs )]) ;; Sidd: ISSUE HERE, this is racket or, I want forge or.
+                (dict-set! ocs target new-oc))
+        (dict-set! ocs target oc)))]))))
 
 ;; Very lightweight and unintelligent for now.
 ;; Compiles test AST to a string and ensures that the
@@ -821,11 +819,11 @@
           ['sufficient (begin0
                           ;; p => q : p is a sufficient condition for q 
                           (syntax/loc stx (implies pwd.prop-name pwd.pred-name)) 
-                          (build-oc-for-pred (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))]
+                          ( (overconstraints 'add) (syntax/loc stx pwd.prop-name) (syntax-e #'pwd.pred-name)))]
           ['necessary  (begin0
                           ;; q => p : p is a necessary condition for q
                           (syntax/loc stx (implies pwd.pred-name pwd.prop-name))
-                          (build-uc-for-pred (syntax/loc stx pwd.prop-name) (syntax/loc stx pwd.pred-name)))] 
+                          ((underconstraints 'add) (syntax/loc stx pwd.prop-name) (syntax-e #'pwd.pred-name)))] 
           [default (raise (format "Unrecognized constraint ~a" #'ct))])
 
    #:do [(match-define (list op lhs rhs) (syntax->list #'ct-as-imp))        
@@ -849,11 +847,14 @@
   [cd:CoverageDeclClass 
    #:with tn (make-temporary-name stx)
    #:with exp (match (syntax-e #'cd.constraint-type)
-               ['sufficient (build-oc-for-pred (syntax/loc stx cd.name) (syntax/loc stx cd.name))] 
-               ['necessary  (build-uc-for-pred (syntax/loc stx cd.name) (syntax/loc stx cd.name))] 
+               ['sufficient ((overconstraints  'get) (syntax-e #'cd.name ))] 
+               ['necessary  ((underconstraints 'get) (syntax-e #'cd.name))] 
            [default (raise (format "Unrecognized constraint ~a" (syntax-e #'cd.constraint-type)))])
-   #:with coverage-exp (syntax/loc stx (implies tn cd.name)) ;; Fix this later
 
+
+   #:with coverage-exp (match (syntax-e #'cd.constraint-type)
+               ['sufficient (syntax/loc stx (implies cd.name tn))] 
+               ['necessary  (syntax/loc stx (implies tn cd.name))] )
    #:with test_name (format-id stx "~a ~a coverage"  (syntax-e #'cd.name) (syntax-e #'cd.constraint-type))
 
    (syntax/loc stx
